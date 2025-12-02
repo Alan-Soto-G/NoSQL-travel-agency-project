@@ -5,7 +5,7 @@
 const mediaSchema = {
   _id: { type: String, required: true }, // ID único del documento
   title: { type: String, required: true }, // Título descriptivo de la imagen
-  category: { type: String, required: true }, // Categoría: 'hotel', 'actividad', 'destino', 'vehiculo', etc.
+  category: { type: String, required: true }, // Categoría: 'hotel', 'actividad', 'destino', 'vehiculo', 'gastronomia', 'eventos', 'transporte', 'general'
   tags: { type: Array, default: [] }, // Etiquetas para filtrado: ['playa', 'montaña', 'aventura']
   caption: { type: String, required: false }, // Descripción generada o manual
   image_file_id: { type: String, required: true }, // ObjectId del archivo en GridFS
@@ -40,6 +40,9 @@ function validateMediaDocument(doc) {
     "actividad",
     "destino",
     "vehiculo",
+    "gastronomia",
+    "eventos",
+    "transporte",
     "general",
   ];
   if (doc.category && !validCategories.includes(doc.category)) {

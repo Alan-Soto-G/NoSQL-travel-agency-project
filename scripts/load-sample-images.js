@@ -10,7 +10,67 @@ const path = require("path");
  */
 
 const API_BASE_URL =
-  process.env.API_BASE_URL || "http://localhost:3000/api/rag";
+  process.env.API_BASE_URL || "http://127.0.0.1:3000/api/rag";
+const CLIP_SERVICE_URL =
+  process.env.CLIP_SERVICE_URL || "http://127.0.0.1:5000";
+
+/**
+ * Verificar que el servicio CLIP esté disponible
+ */
+async function checkClipService() {
+  console.log("🔍 Verificando servicio CLIP...");
+  const maxRetries = 5;
+  const delayMs = 2000;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      console.log(`   Intentando conectar a: ${CLIP_SERVICE_URL}/health`);
+      const response = await axios.get(`${CLIP_SERVICE_URL}/health`, {
+        timeout: 5000,
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      console.log(`   Respuesta recibida:`, response.data);
+      if (response.data && response.data.status === "healthy") {
+        console.log(`✅ Servicio CLIP disponible en ${CLIP_SERVICE_URL}`);
+        console.log(`   Modelo: ${response.data.model}`);
+        console.log(`   Dispositivo: ${response.data.device}`);
+        console.log(
+          `   Dimensiones embedding: ${response.data.embedding_dim}\n`
+        );
+        return true;
+      }
+    } catch (error) {
+      console.log(`   Error detalles:`, {
+        code: error.code,
+        message: error.message,
+        response: error.response?.status,
+      });
+      if (i < maxRetries - 1) {
+        console.log(
+          `⚠️  Servicio CLIP no responde (${
+            error.code || error.message
+          }), esperando ${delayMs / 1000}s... (intento ${i + 1}/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      } else {
+        console.error(
+          `\n❌ ERROR: Servicio CLIP no disponible en ${CLIP_SERVICE_URL}`
+        );
+        console.error(`   Detalles del error: ${error.code || error.message}`);
+        console.error(
+          "   Asegúrate de que el servicio esté corriendo con: npm run clip-service"
+        );
+        console.error(
+          "   o: C:\\temp_venv\\venv\\Scripts\\python.exe python/clip_service.py\n"
+        );
+        return false;
+      }
+    }
+  }
+  return false;
+}
 
 // Datos de ejemplo para la agencia de viajes
 const sampleImages = [
@@ -20,7 +80,7 @@ const sampleImages = [
     filename: "playa_caribe_1.jpg",
     metadata: {
       title: "Playa del Carmen - Caribe Mexicano",
-      category: "destinos",
+      category: "destino",
       tags: ["playa", "caribe", "mexico", "arena-blanca"],
       caption:
         "Hermosa playa de arena blanca con aguas cristalinas turquesas del Caribe mexicano",
@@ -32,7 +92,7 @@ const sampleImages = [
     filename: "playa_colombia_1.jpg",
     metadata: {
       title: "Playa de Cartagena - Colombia",
-      category: "destinos",
+      category: "destino",
       tags: ["playa", "colombia", "cartagena", "caribe"],
       caption: "Playa paradisíaca en Cartagena con palmeras y mar azul intenso",
       related_entity_id: "destino_cartagena_001",
@@ -43,7 +103,7 @@ const sampleImages = [
     filename: "isla_tropical_1.jpg",
     metadata: {
       title: "Isla Tropical - Pacífico",
-      category: "destinos",
+      category: "destino",
       tags: ["isla", "tropical", "pacifico", "exotico"],
       caption:
         "Isla tropical rodeada de aguas cristalinas perfecta para luna de miel",
@@ -57,7 +117,7 @@ const sampleImages = [
     filename: "hotel_lujo_1.jpg",
     metadata: {
       title: "Suite Presidential - Hotel Gran Caribe",
-      category: "hoteles",
+      category: "hotel",
       tags: ["hotel", "lujo", "suite", "cinco-estrellas"],
       caption: "Suite presidencial con vista al mar y acabados de lujo",
       related_entity_id: "hotel_gran_caribe_001",
@@ -68,7 +128,7 @@ const sampleImages = [
     filename: "hotel_boutique_1.jpg",
     metadata: {
       title: "Hotel Boutique Colonial",
-      category: "hoteles",
+      category: "hotel",
       tags: ["hotel", "boutique", "colonial", "romantico"],
       caption:
         "Hotel boutique con arquitectura colonial en el centro histórico",
@@ -80,7 +140,7 @@ const sampleImages = [
     filename: "hotel_resort_1.jpg",
     metadata: {
       title: "Resort Todo Incluido",
-      category: "hoteles",
+      category: "hotel",
       tags: ["resort", "todo-incluido", "familiar", "piscina"],
       caption: "Resort de lujo con piscinas infinitas y playa privada",
       related_entity_id: "hotel_resort_001",
@@ -93,7 +153,7 @@ const sampleImages = [
     filename: "actividad_buceo_1.jpg",
     metadata: {
       title: "Buceo en Arrecife de Coral",
-      category: "actividades",
+      category: "actividad",
       tags: ["buceo", "aventura", "acuatico", "arrecife"],
       caption:
         "Experiencia de buceo en arrecife de coral con vida marina abundante",
@@ -105,7 +165,7 @@ const sampleImages = [
     filename: "actividad_parapente_1.jpg",
     metadata: {
       title: "Parapente sobre la Costa",
-      category: "actividades",
+      category: "actividad",
       tags: ["parapente", "aventura", "extremo", "costa"],
       caption: "Vuelo en parapente con vistas espectaculares de la costa",
       related_entity_id: "actividad_parapente_001",
@@ -116,7 +176,7 @@ const sampleImages = [
     filename: "actividad_surf_1.jpg",
     metadata: {
       title: "Clases de Surf",
-      category: "actividades",
+      category: "actividad",
       tags: ["surf", "deporte", "playa", "clases"],
       caption: "Clases de surf para principiantes en playa con olas perfectas",
       related_entity_id: "actividad_surf_001",
@@ -249,6 +309,13 @@ async function uploadImage(imagePath, metadata) {
  */
 async function main() {
   console.log("🚀 Iniciando carga de imágenes de ejemplo...\n");
+
+  // 1. Verificar que el servicio CLIP esté disponible
+  const clipAvailable = await checkClipService();
+  if (!clipAvailable) {
+    console.error("💥 No se puede continuar sin el servicio CLIP");
+    process.exit(1);
+  }
 
   const tempDir = path.join(__dirname, "..", "test-data", "temp");
 
