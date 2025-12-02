@@ -1,33 +1,77 @@
 const { getRagDB } = require("../../config/db");
 const axios = require("axios");
+const { ObjectId } = require("mongodb");
 
 const CLIP_SERVICE_URL =
-  process.env.CLIP_SERVICE_URL || "http://localhost:5000";
+  process.env.CLIP_SERVICE_URL || "http://127.0.0.1:5000";
 const SEARCH_INDEX_NAME = process.env.VECTOR_INDEX_NAME || "vector_index";
+
+/**
+ * Verifica que el servicio CLIP esté disponible
+ */
+async function checkClipServiceHealth(maxRetries = 3, delayMs = 1000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await axios.get(`${CLIP_SERVICE_URL}/health`, {
+        timeout: 5000,
+      });
+      if (response.data.status === "healthy") {
+        return true;
+      }
+    } catch (error) {
+      if (i < maxRetries - 1) {
+        console.log(
+          `⚠️  Servicio CLIP no responde, reintentando (${
+            i + 1
+          }/${maxRetries})...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  return false;
+}
 
 /**
  * Genera embedding de texto usando el servicio CLIP
  */
-async function generateTextEmbedding(text) {
-  try {
-    const response = await axios.post(
-      `${CLIP_SERVICE_URL}/embed/text`,
-      { text },
-      {
-        headers: { "Content-Type": "application/json" },
-        timeout: 30000,
-      }
+async function generateTextEmbedding(text, retries = 2) {
+  // Verificar que el servicio esté disponible antes de intentar
+  const isHealthy = await checkClipServiceHealth(3, 1000);
+  if (!isHealthy) {
+    throw new Error(
+      "Servicio CLIP no disponible. Asegúrate de que esté corriendo en " +
+        CLIP_SERVICE_URL
     );
+  }
 
-    return response.data.embedding;
-  } catch (error) {
-    if (error.code === "ECONNREFUSED") {
-      throw new Error(
-        "Servicio CLIP no disponible. Asegúrate de que esté corriendo en " +
-          CLIP_SERVICE_URL
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await axios.post(
+        `${CLIP_SERVICE_URL}/embed/text`,
+        { text },
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 30000,
+        }
       );
+
+      return response.data.embedding;
+    } catch (error) {
+      if (attempt < retries) {
+        console.log(`⚠️  Error en intento ${attempt + 1}, reintentando...`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
+
+      if (error.code === "ECONNREFUSED") {
+        throw new Error(
+          "Servicio CLIP no disponible. Asegúrate de que esté corriendo en " +
+            CLIP_SERVICE_URL
+        );
+      }
+      throw new Error(`Error generando embedding de texto: ${error.message}`);
     }
-    throw new Error(`Error generando embedding de texto: ${error.message}`);
   }
 }
 
@@ -132,8 +176,12 @@ async function searchSimilarImages(mediaId, options = {}) {
     const { k = 5 } = options;
     const db = getRagDB();
 
+    // Convertir string a ObjectId si es necesario
+    const objectId =
+      typeof mediaId === "string" ? new ObjectId(mediaId) : mediaId;
+
     // Obtener el embedding de la imagen original
-    const sourceDoc = await db.collection("media").findOne({ _id: mediaId });
+    const sourceDoc = await db.collection("media").findOne({ _id: objectId });
 
     if (!sourceDoc) {
       throw new Error("Imagen fuente no encontrada");
@@ -159,7 +207,7 @@ async function searchSimilarImages(mediaId, options = {}) {
       },
       {
         $match: {
-          _id: { $ne: mediaId }, // Excluir la imagen original
+          _id: { $ne: objectId }, // Excluir la imagen original
         },
       },
       {
