@@ -12,7 +12,7 @@ const {
   deleteImage,
   downloadFromGridFS,
 } = require("../services/rag/storage");
-const { getDB } = require("../config/mongodb-atlas");
+const { getRagDB } = require("../config/db");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -227,7 +227,7 @@ async function handleUploadImage(req, res) {
 async function handleGetImage(req, res) {
   try {
     const { mediaId } = req.params;
-    const db = getDB();
+    const db = getRagDB();
 
     const doc = await db.collection("media").findOne({ _id: mediaId });
 
@@ -289,7 +289,7 @@ async function handleListImages(req, res) {
   try {
     const { page = 1, limit = 20, category, tags } = req.query;
 
-    const db = getDB();
+    const db = getRagDB();
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const filter = {};
@@ -330,7 +330,7 @@ async function handleListImages(req, res) {
 async function handleCategorySummary(req, res) {
   try {
     const { category } = req.params;
-    const db = getDB();
+    const db = getRagDB();
 
     const documents = await db
       .collection("media")

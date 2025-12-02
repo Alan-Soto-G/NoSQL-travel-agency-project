@@ -1,4 +1,4 @@
-const { getDB, getGridFS } = require("../../config/mongodb-atlas");
+const { getRagDB, getGridFS } = require("../../config/db");
 const {
   createMediaDocument,
   validateMediaDocument,
@@ -137,7 +137,7 @@ async function uploadImageWithEmbedding(imagePath, metadata) {
     }
 
     // 4. Guardar en colección 'media'
-    const db = getDB();
+    const db = getRagDB();
     const result = await db.collection("media").insertOne(mediaDoc);
 
     console.log(`✅ Imagen subida exitosamente (ID: ${result.insertedId})`);
@@ -159,7 +159,7 @@ async function uploadImageWithEmbedding(imagePath, metadata) {
  */
 async function updateMediaDocument(mediaId, updates) {
   try {
-    const db = getDB();
+    const db = getRagDB();
 
     const updateDoc = {
       ...updates,
@@ -189,7 +189,7 @@ async function updateMediaDocument(mediaId, updates) {
  */
 async function deleteImage(mediaId) {
   try {
-    const db = getDB();
+    const db = getRagDB();
     const gridFS = getGridFS();
     const ObjectId = require("mongodb").ObjectId;
 

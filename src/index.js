@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const { connectDB } = require("./config/db");
-const { connectMongoDBAtlas } = require("./config/mongodb-atlas");
 const apiRoutes = require("./routes");
 const ragRoutes = require("./routes/rag");
 
@@ -25,8 +24,7 @@ app.use("/api/rag", ragRoutes);
 // Iniciar el servidor solo después de conectar a la BD
 async function startServer() {
   try {
-    await connectDB(); // Conectar a MongoDB primero (Mongoose)
-    await connectMongoDBAtlas(); // Conectar a MongoDB Atlas (MongoClient para RAG)
+    await connectDB(); // Conecta a MongoDB (Mongoose + Native Client + GridFS)
 
     app.listen(port, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${port}`);

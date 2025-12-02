@@ -1,4 +1,4 @@
-const { getDB } = require("../../config/mongodb-atlas");
+const { getRagDB } = require("../../config/db");
 const axios = require("axios");
 
 const CLIP_SERVICE_URL =
@@ -44,7 +44,7 @@ async function searchImagesByText(queryText, options = {}) {
       relatedEntityId = null,
     } = options;
 
-    const db = getDB();
+    const db = getRagDB();
 
     console.log(`🔍 Buscando: "${queryText}" (top ${k} resultados)`);
 
@@ -130,7 +130,7 @@ async function searchImagesByText(queryText, options = {}) {
 async function searchSimilarImages(mediaId, options = {}) {
   try {
     const { k = 5 } = options;
-    const db = getDB();
+    const db = getRagDB();
 
     // Obtener el embedding de la imagen original
     const sourceDoc = await db.collection("media").findOne({ _id: mediaId });
