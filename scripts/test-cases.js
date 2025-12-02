@@ -117,7 +117,6 @@ async function testCase2() {
   const response = await axios.post(`${API_BASE_URL}/query`, {
     query,
     category: "hotel",
-    tags: ["lujo", "cinco-estrellas"],
     k: 5,
     includeAnswer: true,
   });
@@ -126,7 +125,7 @@ async function testCase2() {
   displayResults(
     2,
     "Filtros Híbridos (Texto + Metadatos → Texto)",
-    `${query} [Filtros: category=hotel, tags=lujo,cinco-estrellas]`,
+    `${query} [Filtro: category=hotel]`,
     response.data,
     responseTime
   );
@@ -238,8 +237,8 @@ async function testCase4() {
     4,
     "RAG Complejo (Texto → Imágenes → LLM → Texto)",
     query,
-    responseTime,
-    response.data
+    response.data,
+    responseTime
   );
 
   console.log("=".repeat(80) + "\n");
