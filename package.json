@@ -27,10 +27,13 @@
   },
   "homepage": "https://github.com/Alan-Soto-G/NoSQL-travel-agency-project#readme",
   "dependencies": {
+    "axios": "^1.6.2",
     "dotenv": "^16.6.1",
     "express": "^5.2.1",
+    "form-data": "^4.0.0",
     "mongodb": "^7.0.0",
-    "mongoose": "^9.0.0"
+    "mongoose": "^9.0.0",
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
