@@ -117,6 +117,7 @@ async function testCase2() {
   const response = await axios.post(`${API_BASE_URL}/query`, {
     query,
     category: "hotel",
+    tags: ["hotel"], // Usar tag más genérico que existe en todos los hoteles
     k: 5,
     includeAnswer: true,
   });
@@ -125,7 +126,7 @@ async function testCase2() {
   displayResults(
     2,
     "Filtros Híbridos (Texto + Metadatos → Texto)",
-    `${query} [Filtro: category=hotel]`,
+    `${query} [Filtros: category=hotel, tags=hotel]`,
     response.data,
     responseTime
   );
