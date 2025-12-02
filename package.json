@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "load-samples": "node scripts/load-sample-images.js",
+    "test-cases": "node scripts/test-cases.js",
+    "clip-service": "cd python && python clip_service.py"
   },
   "repository": {
     "type": "git",

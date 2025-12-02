@@ -1,0 +1,362 @@
+{
+  "info": {
+    "name": "Sistema RAG - Agencia de Viajes",
+    "description": "Colección de endpoints del sistema RAG multimodal con CLIP y MongoDB Atlas Vector Search",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Upload",
+      "item": [
+        {
+          "name": "Subir Imagen con Metadatos",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "/path/to/image.jpg"
+                },
+                {
+                  "key": "title",
+                  "value": "Playa de Cartagena",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "destinos",
+                  "type": "text"
+                },
+                {
+                  "key": "tags",
+                  "value": "playa,colombia,caribe",
+                  "type": "text"
+                },
+                {
+                  "key": "caption",
+                  "value": "Hermosa playa caribeña con arena blanca",
+                  "type": "text"
+                },
+                {
+                  "key": "related_entity_id",
+                  "value": "hotel_123",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rag/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "upload"]
+            },
+            "description": "Sube una imagen, genera embeddings CLIP y almacena en GridFS + MongoDB"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Search",
+      "item": [
+        {
+          "name": "Búsqueda Simple por Texto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rag/search?query=playas paradisíacas&k=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "playas paradisíacas"
+                },
+                {
+                  "key": "k",
+                  "value": "5"
+                },
+                {
+                  "key": "category",
+                  "value": "destinos",
+                  "disabled": true
+                },
+                {
+                  "key": "tags",
+                  "value": "playa,caribe",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Búsqueda vectorial simple sin respuesta del LLM"
+          }
+        },
+        {
+          "name": "Búsqueda con Filtros (Categoría)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rag/search?query=hoteles de lujo&category=hoteles&k=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "hoteles de lujo"
+                },
+                {
+                  "key": "category",
+                  "value": "hoteles"
+                },
+                {
+                  "key": "k",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Búsqueda con filtro por categoría"
+          }
+        },
+        {
+          "name": "Búsqueda con Filtros (Tags)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rag/search?query=actividades emocionantes&tags=aventura,extremo&k=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "actividades emocionantes"
+                },
+                {
+                  "key": "tags",
+                  "value": "aventura,extremo"
+                },
+                {
+                  "key": "k",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Búsqueda con filtro por tags"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. RAG Query",
+      "item": [
+        {
+          "name": "Consulta RAG Completa (con LLM)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"¿Cuáles son las mejores playas para luna de miel?\",\n  \"k\": 5,\n  \"includeAnswer\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rag/query",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "query"]
+            },
+            "description": "Búsqueda vectorial + respuesta generada por LLM (Groq)"
+          }
+        },
+        {
+          "name": "Consulta RAG con Filtros",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"hoteles románticos con vista al mar\",\n  \"category\": \"hoteles\",\n  \"tags\": [\"lujo\", \"romantico\"],\n  \"k\": 5,\n  \"includeAnswer\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rag/query",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "query"]
+            },
+            "description": "RAG con filtros de metadatos"
+          }
+        },
+        {
+          "name": "Consulta RAG sin Respuesta LLM",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"actividades de aventura\",\n  \"k\": 5,\n  \"includeAnswer\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rag/query",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "query"]
+            },
+            "description": "Solo búsqueda vectorial, sin generar respuesta del LLM"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Similar Images",
+      "item": [
+        {
+          "name": "Buscar Imágenes Similares",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rag/similar/{{media_id}}?k=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "similar", "{{media_id}}"],
+              "query": [
+                {
+                  "key": "k",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Búsqueda multimodal: encuentra imágenes similares basándose en embeddings"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Image Management",
+      "item": [
+        {
+          "name": "Listar Imágenes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rag/images?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "images"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "category",
+                  "value": "destinos",
+                  "disabled": true
+                },
+                {
+                  "key": "tags",
+                  "value": "playa",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lista todas las imágenes con paginación y filtros opcionales"
+          }
+        },
+        {
+          "name": "Obtener Metadatos de Imagen",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rag/image/{{media_id}}?metadata=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "image", "{{media_id}}"],
+              "query": [
+                {
+                  "key": "metadata",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Obtiene solo los metadatos de una imagen (sin binario)"
+          }
+        },
+        {
+          "name": "Descargar Imagen",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rag/image/{{media_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "image", "{{media_id}}"]
+            },
+            "description": "Descarga el binario de la imagen desde GridFS"
+          }
+        },
+        {
+          "name": "Eliminar Imagen",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rag/image/{{media_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "image", "{{media_id}}"]
+            },
+            "description": "Elimina una imagen y sus metadatos del sistema"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Summary",
+      "item": [
+        {
+          "name": "Resumen de Categoría con LLM",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/rag/summary/destinos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rag", "summary", "destinos"]
+            },
+            "description": "Genera un resumen de todas las imágenes de una categoría usando LLM"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "media_id",
+      "value": "REEMPLAZAR_CON_ID_REAL",
+      "type": "string"
+    }
+  ]
+}
