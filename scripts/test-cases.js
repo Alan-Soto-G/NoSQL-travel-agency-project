@@ -73,7 +73,9 @@ function displayResults(testNumber, testName, query, results, responseTime) {
 }
 
 /**
- * CASO 1: Búsqueda Semántica Simple
+ * CASO 1: Búsqueda Semántica Simple (TEXTO → TEXTO + IMÁGENES)
+ * Tipo: RAG completo con LLM
+ * Evalúa: Capacidad de entender lenguaje natural y generar respuesta contextualizada
  */
 async function testCase1() {
   const query =
@@ -87,13 +89,26 @@ async function testCase1() {
   });
   const responseTime = measureTime(startTime);
 
-  displayResults(1, "Búsqueda Semántica", query, response.data, responseTime);
+  displayResults(
+    1,
+    "Búsqueda Semántica (Texto → Texto + Imágenes)",
+    query,
+    response.data,
+    responseTime
+  );
 
-  return { query, responseTime, results: response.data };
+  return {
+    query,
+    responseTime,
+    results: response.data,
+    type: "texto-texto-rag",
+  };
 }
 
 /**
- * CASO 2: Filtros Híbridos
+ * CASO 2: Filtros Híbridos (TEXTO → TEXTO con metadatos)
+ * Tipo: RAG con filtros estructurados
+ * Evalúa: Combinación de búsqueda vectorial + filtros tradicionales
  */
 async function testCase2() {
   const query = "hoteles de lujo con vista al mar";
@@ -110,22 +125,28 @@ async function testCase2() {
 
   displayResults(
     2,
-    "Filtros Híbridos (Categoría + Tags)",
+    "Filtros Híbridos (Texto + Metadatos → Texto)",
     `${query} [Filtros: category=hotel, tags=lujo,cinco-estrellas]`,
     response.data,
     responseTime
   );
 
-  return { query, responseTime, results: response.data };
+  return {
+    query,
+    responseTime,
+    results: response.data,
+    type: "texto-texto-filtros",
+  };
 }
-
 /**
- * CASO 3: Búsqueda Multimodal (Imagen similar)
+ * CASO 3: Búsqueda Multimodal IMAGEN → IMÁGENES
+ * Tipo: Similitud visual pura (sin texto)
+ * Evalúa: Capacidad de CLIP para comparar embeddings visuales
  */
 async function testCase3() {
   console.log("\n" + "=".repeat(80));
   console.log(
-    `${colors.bright}${colors.blue}CASO DE PRUEBA 3: Búsqueda Multimodal (Imagen Similares)${colors.reset}`
+    `${colors.bright}${colors.blue}CASO DE PRUEBA 3: Búsqueda Multimodal (IMAGEN → IMÁGENES)${colors.reset}`
   );
   console.log("=".repeat(80));
 
@@ -147,6 +168,9 @@ async function testCase3() {
     `${colors.cyan}🖼️  Imagen de referencia:${colors.reset} ${referenceImage.title}`
   );
   console.log(`${colors.cyan}📂 ID:${colors.reset} ${referenceImage._id}`);
+  console.log(
+    `${colors.cyan}📝 Tipo de búsqueda:${colors.reset} Similitud visual (embedding vs embedding)`
+  );
 
   const startTime = Date.now();
   const response = await axios.get(
@@ -189,11 +213,14 @@ async function testCase3() {
     query: `Similares a: ${referenceImage.title}`,
     responseTime,
     results: response.data,
+    type: "imagen-imagen",
   };
 }
 
 /**
- * CASO 4: RAG Complejo con LLM
+ * CASO 4: RAG Complejo con LLM (TEXTO → IMÁGENES → TEXTO enriquecido)
+ * Tipo: Pipeline completo RAG
+ * Evalúa: Integración de búsqueda vectorial + contexto + generación LLM
  */
 async function testCase4() {
   const query =
@@ -207,35 +234,85 @@ async function testCase4() {
   });
   const responseTime = measureTime(startTime);
 
-  displayResults(4, "RAG Complejo con LLM", query, response.data, responseTime);
+  displayResults(
+    4,
+    "RAG Complejo (Texto → Imágenes → LLM → Texto)",
+    query,
+    responseTime,
+    response.data
+  );
 
-  return { query, responseTime, results: response.data };
+  console.log("=".repeat(80) + "\n");
+
+  return {
+    query,
+    responseTime,
+    results: response.data,
+    type: "texto-texto-rag-complejo",
+  };
 }
-
 /**
- * CASO ADICIONAL: Búsqueda por actividades de aventura
+ * CASO 5: Búsqueda Multimodal TEXTO → IMÁGENES (sin LLM)
+ * Tipo: Cross-modal search puro
+ * Evalúa: Capacidad de CLIP para mapear texto e imagen en mismo espacio vectorial
  */
 async function testCase5() {
-  const query = "actividades extremas y deportes acuáticos emocionantes";
+  const query = "paisajes montañosos con nieve y lagos cristalinos";
+
+  console.log("\n" + "=".repeat(80));
+  console.log(
+    `${colors.bright}${colors.blue}CASO DE PRUEBA 5: Búsqueda Multimodal (TEXTO → IMÁGENES)${colors.reset}`
+  );
+  console.log("=".repeat(80));
+  console.log(`${colors.cyan}📝 Query:${colors.reset} ${query}`);
+  console.log(
+    `${colors.cyan}📝 Tipo:${colors.reset} Cross-modal (texto busca imágenes visualmente similares)`
+  );
 
   const startTime = Date.now();
-  const response = await axios.post(`${API_BASE_URL}/query`, {
-    query,
-    category: "actividad",
-    k: 5,
-    includeAnswer: true,
+  const response = await axios.get(`${API_BASE_URL}/search`, {
+    params: {
+      query,
+      k: 5,
+    },
   });
   const responseTime = measureTime(startTime);
 
-  displayResults(
-    5,
-    "Búsqueda de Actividades (Adicional)",
-    query,
-    response.data,
-    responseTime
+  console.log(
+    `${colors.cyan}⏱️  Tiempo de respuesta:${colors.reset} ${responseTime}ms`
+  );
+  console.log(
+    `${colors.cyan}📊 Resultados encontrados:${colors.reset} ${
+      response.data.totalResults || 0
+    }`
   );
 
-  return { query, responseTime, results: response.data };
+  if (response.data.results && response.data.results.length > 0) {
+    console.log(
+      `\n${colors.yellow}🔍 Top ${Math.min(
+        3,
+        response.data.results.length
+      )} resultados:${colors.reset}`
+    );
+    response.data.results.slice(0, 3).forEach((result, idx) => {
+      console.log(
+        `\n  ${idx + 1}. ${colors.bright}${result.title}${colors.reset}`
+      );
+      console.log(`     📂 Categoría: ${result.category}`);
+      console.log(`     🏷️  Tags: ${result.tags?.join(", ") || "N/A"}`);
+      console.log(`     📈 Score: ${result.score?.toFixed(4) || "N/A"}`);
+      console.log(`     💬 ${result.caption}`);
+    });
+  }
+
+  console.log("=".repeat(80) + "\n");
+
+  return {
+    query,
+    responseTime,
+    results: response.data,
+    type: "texto-imagen-multimodal",
+  };
 }
 
 /**
@@ -286,6 +363,27 @@ function generateMetricsReport(results) {
       precision * 100
     ).toFixed(1)}%`
   );
+
+  // Desglose por tipo de búsqueda
+  console.log(
+    `\n${colors.yellow}🔬 Desglose por tipo de búsqueda:${colors.reset}`
+  );
+  const typeGroups = results.reduce((acc, r) => {
+    const type = r.type || "unknown";
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(r);
+    return acc;
+  }, {});
+
+  Object.entries(typeGroups).forEach(([type, items]) => {
+    const avgTimeType =
+      items.reduce((sum, r) => sum + r.responseTime, 0) / items.length;
+    console.log(
+      `   ${type}: ${items.length} pruebas, promedio ${avgTimeType.toFixed(
+        2
+      )}ms`
+    );
+  });
 
   console.log("\n" + "█".repeat(80) + "\n");
 }
