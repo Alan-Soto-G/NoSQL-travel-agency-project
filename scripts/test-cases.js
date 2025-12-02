@@ -101,7 +101,7 @@ async function testCase2() {
   const startTime = Date.now();
   const response = await axios.post(`${API_BASE_URL}/query`, {
     query,
-    category: "hoteles",
+    category: "hotel",
     tags: ["lujo", "cinco-estrellas"],
     k: 5,
     includeAnswer: true,
@@ -111,7 +111,7 @@ async function testCase2() {
   displayResults(
     2,
     "Filtros Híbridos (Categoría + Tags)",
-    `${query} [Filtros: category=hoteles, tags=lujo,cinco-estrellas]`,
+    `${query} [Filtros: category=hotel, tags=lujo,cinco-estrellas]`,
     response.data,
     responseTime
   );
@@ -131,14 +131,14 @@ async function testCase3() {
 
   // Primero obtener una imagen de referencia
   const listResponse = await axios.get(`${API_BASE_URL}/images`, {
-    params: { limit: 1, category: "destinos" },
+    params: { limit: 1, category: "destino" },
   });
 
   if (
     !listResponse.data.documents ||
     listResponse.data.documents.length === 0
   ) {
-    console.log('⚠️  No hay imágenes en la categoría "destinos" para probar');
+    console.log('⚠️  No hay imágenes en la categoría "destino" para probar');
     return null;
   }
 
@@ -221,7 +221,7 @@ async function testCase5() {
   const startTime = Date.now();
   const response = await axios.post(`${API_BASE_URL}/query`, {
     query,
-    category: "actividades",
+    category: "actividad",
     k: 5,
     includeAnswer: true,
   });

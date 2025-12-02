@@ -1,5 +1,6 @@
 const { getRagDB } = require("../../config/db");
 const axios = require("axios");
+const { ObjectId } = require("mongodb");
 
 const CLIP_SERVICE_URL =
   process.env.CLIP_SERVICE_URL || "http://127.0.0.1:5000";
@@ -175,8 +176,12 @@ async function searchSimilarImages(mediaId, options = {}) {
     const { k = 5 } = options;
     const db = getRagDB();
 
+    // Convertir string a ObjectId si es necesario
+    const objectId =
+      typeof mediaId === "string" ? new ObjectId(mediaId) : mediaId;
+
     // Obtener el embedding de la imagen original
-    const sourceDoc = await db.collection("media").findOne({ _id: mediaId });
+    const sourceDoc = await db.collection("media").findOne({ _id: objectId });
 
     if (!sourceDoc) {
       throw new Error("Imagen fuente no encontrada");
@@ -202,7 +207,7 @@ async function searchSimilarImages(mediaId, options = {}) {
       },
       {
         $match: {
-          _id: { $ne: mediaId }, // Excluir la imagen original
+          _id: { $ne: objectId }, // Excluir la imagen original
         },
       },
       {
