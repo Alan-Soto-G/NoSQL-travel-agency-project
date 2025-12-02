@@ -2,7 +2,7 @@
   "name": "nosql-travel-agency-project",
   "version": "1.0.0",
   "description": "NoSQL database project for a travel agency",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/Alan-Soto-G/NoSQL-travel-agency-project/issues"
   },
-  "homepage": "https://github.com/Alan-Soto-G/NoSQL-travel-agency-project#readme"
+  "homepage": "https://github.com/Alan-Soto-G/NoSQL-travel-agency-project#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
 }
